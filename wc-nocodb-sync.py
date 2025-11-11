@@ -370,6 +370,17 @@ class WCNocODBSyncer:
                     ordine_data['Quantity (- Refund)'] = order['line_items'][0].get('quantity', 1)
                     ordine_data['Item Cost'] = float(order['line_items'][0].get('total', 0))
 
+                # Estrai campi custom da meta_data
+                if order.get('meta_data'):
+                    for meta in order['meta_data']:
+                        key = meta.get('key', '')
+                        value = meta.get('value', '')
+                        # Mappa i campi custom
+                        if key == 'percorso':
+                            ordine_data['percorso'] = value
+                        elif key == '_data_partenza' or key == 'data_partenza':
+                            ordine_data['data partenza'] = value
+
                 # Cerca ordine esistente per Order Number
                 existing = self.noco.get_record_by_field(table_id, 'Order Number', order_id)
                 time.sleep(1.0)  # Rate limiting per NocoDB (200ms)
