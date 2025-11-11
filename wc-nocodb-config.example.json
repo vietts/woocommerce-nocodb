@@ -1,0 +1,15 @@
+{
+  "woocommerce": {
+    "store_url": "https://your-store.com",
+    "consumer_key": "REDACTED_CONSUMER_KEY",
+    "consumer_secret": "REDACTED_CONSUMER_SECRET"
+  },
+  "nocodb": {
+    "api_url": "https://app.nocodb.com/api/v2",
+    "api_token": "REDACTED_NOCODB_TOKEN",
+    "table_ids": {
+      "clienti": "REDACTED_TABLE_ID",
+      "ordini": "REDACTED_TABLE_ID"
+    }
+  }
+}

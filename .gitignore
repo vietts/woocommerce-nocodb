@@ -1,0 +1,36 @@
+# Credenziali e file sensibili
+.wc-nocodb-sync.json
+.env
+.env.local
+wc-credentials.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+/tmp/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+.cache/
