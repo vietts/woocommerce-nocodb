@@ -1,15 +1,15 @@
 {
   "woocommerce": {
     "store_url": "https://your-store.com",
-    "consumer_key": "REDACTED_CONSUMER_KEY",
-    "consumer_secret": "REDACTED_CONSUMER_SECRET"
+    "consumer_key": "ck_your_consumer_key_here",
+    "consumer_secret": "cs_your_consumer_secret_here"
   },
   "nocodb": {
     "api_url": "https://app.nocodb.com/api/v2",
-    "api_token": "REDACTED_NOCODB_TOKEN",
+    "api_token": "your_nocodb_api_token_here",
     "table_ids": {
-      "clienti": "REDACTED_TABLE_ID",
-      "ordini": "REDACTED_TABLE_ID"
+      "clienti": "your_clienti_table_id_here",
+      "ordini": "your_ordini_table_id_here"
     }
   }
 }
