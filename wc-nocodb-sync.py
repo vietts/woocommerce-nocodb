@@ -328,6 +328,9 @@ class WCNocODBSyncer:
         table_id = self.config['nocodb']['table_ids']['ordini']
         clienti_table_id = self.config['nocodb']['table_ids']['clienti']
 
+        # Traccia ordini già sincronizzati (per evitare duplicati bundle)
+        processed_order_ids = set()
+
         for order in wc_orders:
             try:
                 order_id = str(order.get('id'))
@@ -335,6 +338,13 @@ class WCNocODBSyncer:
 
                 if not email or not order_id:
                     continue
+
+                # Skip se ordine è già stato sincronizzato (evita duplicati bundle)
+                if order_id in processed_order_ids:
+                    logger.debug(f"⏭️ Ordine {order_id} già sincronizzato (bundle child), skip")
+                    continue
+
+                processed_order_ids.add(order_id)
 
                 # Estrai dati ordine (mapping ai campi reali di NocoDB)
                 ordine_data = {
