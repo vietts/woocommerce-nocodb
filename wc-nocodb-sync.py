@@ -112,7 +112,7 @@ class WooCommerceClient:
                     break
 
                 page += 1
-                time.sleep(0.5)  # Rate limit gentile
+                time.sleep(1.0)  # Rate limit gentile
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"❌ Errore recuperando ordini WooCommerce: {e}")
@@ -304,7 +304,7 @@ class WCNocODBSyncer:
             try:
                 # Cerca cliente esistente per email
                 existing = self.noco.get_record_by_email(table_id, email)
-                time.sleep(0.2)  # Rate limiting per NocoDB (200ms)
+                time.sleep(1.0)  # Rate limiting per NocoDB (200ms)
 
                 if existing:
                     # UPDATE: aggiorna dati
@@ -315,7 +315,7 @@ class WCNocODBSyncer:
                     self.noco.create_record(table_id, cliente_data)
                     self.stats['clienti_nuovi'] += 1
 
-                time.sleep(0.2)  # Rate limiting per NocoDB (200ms)
+                time.sleep(1.0)  # Rate limiting per NocoDB (200ms)
 
             except Exception as e:
                 logger.error(f"❌ Errore sincronizzando cliente {email}: {e}")
@@ -372,7 +372,7 @@ class WCNocODBSyncer:
 
                 # Cerca ordine esistente per Order Number
                 existing = self.noco.get_record_by_field(table_id, 'Order Number', order_id)
-                time.sleep(0.2)  # Rate limiting per NocoDB (200ms)
+                time.sleep(1.0)  # Rate limiting per NocoDB (200ms)
 
                 if existing:
                     # Se ordine è "completed" o "cancelled", non aggiornare più (frozen)
@@ -385,12 +385,12 @@ class WCNocODBSyncer:
                         self.noco.update_record(table_id, existing['Id'], ordine_data)
                         self.stats['ordini_aggiornati'] += 1
                         logger.info(f"🔄 Ordine {order_id}: {existing.get('Order Status')} → {ordine_data['Order Status']}")
-                        time.sleep(0.2)  # Rate limiting per NocoDB (200ms)
+                        time.sleep(1.0)  # Rate limiting per NocoDB (200ms)
                 else:
                     # INSERT nuovo ordine
                     self.noco.create_record(table_id, ordine_data)
                     self.stats['ordini_nuovi'] += 1
-                    time.sleep(0.2)  # Rate limiting per NocoDB (200ms)
+                    time.sleep(1.0)  # Rate limiting per NocoDB (200ms)
 
             except Exception as e:
                 logger.error(f"❌ Errore sincronizzando ordine {order.get('id')}: {e}")
