@@ -202,11 +202,19 @@ class NocODBClient:
             return None
 
     def update_record(self, table_id: str, record_id: str, data: Dict) -> Optional[Dict]:
-        """Aggiorna un record in NocoDB"""
+        """Aggiorna un record in NocoDB con fallback a INSERT se record non esiste"""
         try:
             result = self._request('PATCH', f'/tables/{table_id}/records/{record_id}', json=data)
             logger.debug(f"✅ Record {record_id} aggiornato in {table_id}")
             return result
+        except requests.exceptions.HTTPError as e:
+            # Se il record non esiste (404), prova a crearlo (INSERT fallback)
+            if e.response.status_code == 404:
+                logger.warning(f"⚠️ Record {record_id} non trovato (404), fallback a INSERT...")
+                return self.create_record(table_id, data)
+            # Per altri errori HTTP, log e ritorna None
+            logger.error(f"❌ Errore aggiornando record {record_id} in {table_id}: {e}")
+            return None
         except Exception as e:
             logger.error(f"❌ Errore aggiornando record {record_id} in {table_id}: {e}")
             return None
@@ -224,7 +232,13 @@ class NocODBClient:
         """Trova un record per un campo specifico"""
         try:
             records = self.get_table_records(table_id, filters=f"({field},eq,{value})")
-            return records[0] if records else None
+            if records:
+                record = records[0]
+                logger.debug(f"🔍 Trovato record per {field}={value}: ID={record.get('Id', 'N/A')}")
+                return record
+            else:
+                logger.debug(f"🔍 Nessun record trovato per {field}={value}")
+                return None
         except Exception as e:
             logger.warning(f"⚠️ Errore cercando {field}={value} in {table_id}: {e}")
             return None
