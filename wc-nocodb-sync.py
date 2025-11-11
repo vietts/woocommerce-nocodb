@@ -94,11 +94,16 @@ class WooCommerceClient:
                 if not orders:
                     break
 
-                # Filtra ordini per data di modifica (se non "completed"/"cancelled")
-                filtered_orders = [
-                    o for o in orders
-                    if o['date_modified'] >= cutoff_date or o['status'] in ['processing', 'pending']
-                ]
+                # Filtra ordini per data di modifica e stato
+                # Se full_sync: prendi tutti
+                # Altrimenti: solo ultimi 7 giorni + stato processing/pending
+                if days_back >= 1000:  # full_sync
+                    filtered_orders = orders
+                else:
+                    filtered_orders = [
+                        o for o in orders
+                        if o['date_modified'] >= cutoff_date and o['status'] in ['processing', 'pending']
+                    ]
 
                 all_orders.extend(filtered_orders)
 

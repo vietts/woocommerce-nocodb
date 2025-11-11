@@ -74,20 +74,27 @@ export $(cat .env | xargs)
 
 ## 📖 Utilizzo
 
-### Esecuzione manuale
+### ⚡ Primo setup (one-time full sync)
 
 ```bash
-# Sync ultimi 7 giorni
-python3 wc-nocodb-sync.py
+# La PRIMA volta, scarica tutti gli ordini storici
+python3 wc-nocodb-sync.py -c ~/.wc-nocodb-sync.json --full-sync
 
-# Full sync (tutti gli ordini)
-python3 wc-nocodb-sync.py --full-sync
+# Questo sincronizzerà TUTTI gli ordini di WooCommerce
+# Impiegherà un po' (dipende dal numero di ordini), ma è necessario una sola volta
+```
 
-# Con config personalizzato
-python3 wc-nocodb-sync.py -c /path/to/config.json
+### Esecuzione manuale (successivo)
+
+```bash
+# Sync ultimi 7 giorni + solo ordini in processing
+python3 wc-nocodb-sync.py -c ~/.wc-nocodb-sync.json
+
+# Full sync (tutti gli ordini) - opzionale, usa solo se necessario
+python3 wc-nocodb-sync.py -c ~/.wc-nocodb-sync.json --full-sync
 
 # Con logging debug
-python3 wc-nocodb-sync.py --log-level DEBUG
+python3 wc-nocodb-sync.py --log-level DEBUG -c ~/.wc-nocodb-sync.json
 ```
 
 ### Setup cron job (sync una volta al giorno)
@@ -181,7 +188,9 @@ Per sincronizzare gli ordini in tempo reale quando cambiano stato in WooCommerce
 - **INSERT**: Se ordine non esiste in NocoDB
 - **UPDATE**: Se ordine esiste E lo stato è cambiato (e non è frozen)
 - **FREEZE**: Ordini con stato "Completed" o "Cancelled" non vengono più sincronizzati
-- **Filtri**: Solo ordini con status "Processing", "Pending", "On-Hold" negli ultimi 7 giorni (o tutti se --full-sync)
+- **Filtri intelligenti**:
+  - **Sync normale** (cron job): Solo ordini degli ultimi 7 giorni + stato "Processing" o "Pending"
+  - **Full sync** (solo prima, con `--full-sync`): Tutti gli ordini di WooCommerce
 
 ## 📝 Logging
 
