@@ -190,7 +190,7 @@ class NocODBClient:
         """Crea un nuovo record in NocoDB"""
         try:
             result = self._request('POST', f'/tables/{table_id}/records', json=data)
-            logger.debug(f"✅ Record creato in {table_id}: {result.get('id', 'N/A')}")
+            logger.debug(f"✅ Record creato in {table_id}: {result.get('Id', 'N/A')}")
             return result
         except Exception as e:
             logger.error(f"❌ Errore creando record in {table_id}: {e}")
@@ -302,7 +302,7 @@ class WCNocODBSyncer:
 
                 if existing:
                     # UPDATE: aggiorna dati
-                    self.noco.update_record(table_id, existing['id'], cliente_data)
+                    self.noco.update_record(table_id, existing['Id'], cliente_data)
                     self.stats['clienti_aggiornati'] += 1
                 else:
                     # INSERT: crea nuovo
@@ -363,7 +363,7 @@ class WCNocODBSyncer:
 
                     # UPDATE se lo stato è cambiato
                     if existing.get('Order Status') != ordine_data['Order Status']:
-                        self.noco.update_record(table_id, existing['id'], ordine_data)
+                        self.noco.update_record(table_id, existing['Id'], ordine_data)
                         self.stats['ordini_aggiornati'] += 1
                         logger.info(f"🔄 Ordine {order_id}: {existing.get('Order Status')} → {ordine_data['Order Status']}")
                 else:
