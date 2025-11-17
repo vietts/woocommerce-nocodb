@@ -137,10 +137,11 @@ class NotionClient:
 
                             # Check if past/current (for actual publishing)
                             if publish_dt > current_time:
-                                logger.debug(f"Skipping post - Uscita ({publish_date_str}) is in the future")
+                                post_title = post.get('title', 'Unknown')
+                                logger.debug(f"Skipping post '{post_title}' - Uscita ({publish_date_str} -> {publish_dt.isoformat()}) is in the future (current: {current_time.isoformat()})")
                                 continue
                         except Exception as e:
-                            logger.warning(f"Could not parse date {publish_date_str}: {e}")
+                            logger.warning(f"Could not parse date {publish_date_str}: {e}", exc_info=True)
                             continue
                     else:
                         logger.debug(f"Skipping post - no Uscita date")
