@@ -69,6 +69,7 @@ class NotionClient:
                 query_body = {"page_size": 100}
                 if next_cursor:
                     query_body["start_cursor"] = next_cursor
+                    logger.debug(f"Fetching page with cursor: {next_cursor}")
 
                 response = requests.post(
                     f"{self.base_url}/data_sources/{self.data_source_id}/query",
@@ -78,6 +79,7 @@ class NotionClient:
 
                 if response.status_code != 200:
                     logger.error(f"Notion API returned {response.status_code}")
+                    logger.error(f"Request body: {query_body}")
                     logger.error(f"Response body: {response.text}")
                     break
 
