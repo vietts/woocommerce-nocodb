@@ -34,3 +34,6 @@ Thumbs.db
 # Temp
 *.tmp
 .cache/
+
+# Separate repositories (managed independently)
+telegram-notion-scheduler/
