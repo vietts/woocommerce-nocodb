@@ -45,7 +45,7 @@ Il scheduler:
 
 ### Step 3: Verificare su Telegram
 
-Apri il canale `@probavas` e dovresti vedere i tuoi post!
+Apri il canale `@bikeadventureseries` e dovresti vedere i tuoi post!
 
 ---
 
@@ -142,7 +142,7 @@ Controlla che il campo **Messaggio** abbia contenuto su Notion.
 ```env
 # Telegram
 TELEGRAM_BOT_TOKEN=[YOUR_BOT_TOKEN]
-TELEGRAM_CHANNEL=@probavas
+TELEGRAM_CHANNEL=@bikeadventureseries
 
 # Notion (nuova API 2025-09-03)
 NOTION_TOKEN=[YOUR_NOTION_TOKEN]

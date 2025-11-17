@@ -78,7 +78,7 @@ Il programma:
 
 ### Verificare su Telegram
 
-- Apri il canale `@probavas`
+- Apri il canale `@bikeadventureseries`
 - Verifica che i post siano stati pubblicati
 - Controlla i log in `scheduler.log`
 
@@ -96,7 +96,7 @@ Il database deve avere questi campi:
 | Poll Domanda | Text | Domanda del poll (opzionale) |
 | Poll Opzioni | Text | JSON array opzioni (opzionale) |
 | Stato | Select | "Programmato" / "Pubblicato" / "Errore" |
-| Channel ID | Text | @channel (opzionale, di default @probavas) |
+| Channel ID | Text | @channel (opzionale, di default @bikeadventureseries) |
 | Message ID | Text | ID del messaggio Telegram (auto) |
 
 ## 🔧 Gestione degli Errori

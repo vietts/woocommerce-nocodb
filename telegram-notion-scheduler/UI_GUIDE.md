@@ -61,7 +61,7 @@ No scheduled posts to publish
 Testa la connessione a Notion e Telegram. Esegue `test_connection.py` che verifica:
 - ✅ Token Notion valido
 - ✅ Bot Telegram funzionante
-- ✅ Canale @probavas accessibile
+- ✅ Canale @bikeadventureseries accessibile
 
 ### ⚙️ Vedi Config
 Mostra la configurazione del sistema:
@@ -93,7 +93,7 @@ Lo status si aggiorna automaticamente ogni 10 secondi.
 ## 🔗 Link Rapidi
 
 - **📘 Notion Database** - Apre il tuo database Notion nel browser
-- **💬 Telegram Channel** - Apre il canale @probavas nel browser
+- **💬 Telegram Channel** - Apre il canale @bikeadventureseries nel browser
 
 ---
 
