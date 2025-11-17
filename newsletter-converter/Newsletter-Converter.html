@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brevo Newsletter Converter - Offline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        textarea { resize: vertical; }
+        .link-item { word-break: break-all; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app"></div>
+
+    <script>
+        // State management
+        let state = {
+            italianText: '',
+            imageUrl: '',
+            imageLink: '',
+            englishText: '',
+            campaignName: '',
+            greeting: 'Ciao',
+            includeFooter: true,
+            generatedHtml: '',
+            copied: false,
+            extractedLinks: []
+        };
+
+        // Update state and re-render
+        function setState(updates) {
+            state = { ...state, ...updates };
+            render();
+        }
+
+        // Convert markdown text to HTML
+        function convertTextToHtml(text) {
+            const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+
+            return paragraphs.map(para => {
+                let content = para.trim();
+
+                // Handle markdown links [text](url)
+                content = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+                    url = url.trim();
+                    const utmParams = state.campaignName
+                        ? (url.includes('?') ? '&' : '?') + `utm_source=brevo&utm_campaign=${encodeURIComponent(state.campaignName)}&utm_medium=email`
+                        : '';
+                    let formattedText = linkText;
+                    formattedText = formattedText.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                    formattedText = formattedText.replace(/\*(.+?)\*/g, '<em>$1</em>');
+                    return `<a href="${url}${utmParams}">${formattedText}</a>`;
+                });
+
+                // Handle bold **text**
+                content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+                // Handle italic *text*
+                content = content.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+                // Handle bare URLs
+                content = content.replace(/(?<!href=")(https?:\/\/[^\s<"]+)(?!")/g, (url) => {
+                    const utmParams = state.campaignName
+                        ? (url.includes('?') ? '&' : '?') + `utm_source=brevo&utm_campaign=${encodeURIComponent(state.campaignName)}&utm_medium=email`
+                        : '';
+                    return `<a href="${url}${utmParams}">${url}</a>`;
+                });
+
+                // Handle line breaks
+                content = content.replace(/\n/g, '<br>');
+
+                return `              <p>${content}</p>`;
+            }).join('\n');
+        }
+
+        // Generate HTML
+        function generateHtml() {
+            if (!state.italianText.trim()) return;
+
+            const italianHtml = convertTextToHtml(state.italianText);
+            const englishHtml = state.englishText ? convertTextToHtml(state.englishText) : '';
+
+            let dividerSection = '';
+            if (state.imageUrl && state.imageUrl.trim()) {
+                let imgHtml = `<img src="${state.imageUrl}" alt="Divider" style="max-width: 100%; height: auto;">`;
+                if (state.imageLink && state.imageLink.trim()) {
+                    const utmParams = state.campaignName
+                        ? (state.imageLink.includes('?') ? '&' : '?') + `utm_source=brevo&utm_campaign=${encodeURIComponent(state.campaignName)}&utm_medium=email`
+                        : '';
+                    imgHtml = `<a href="${state.imageLink}${utmParams}" style="text-decoration: none;">${imgHtml}</a>`;
+                }
+                dividerSection = `              <p style="text-align: center; margin: 32px 0;">${imgHtml}</p>\n`;
+            } else if (state.englishText && state.englishText.trim()) {
+                dividerSection = `              <p style="text-align: center; margin: 32px 0; padding: 0; border-bottom: 1px solid #e5e7eb;"></p>\n`;
+            }
+
+            const greetingLine = state.greeting.trim()
+                ? `              <p>${state.greeting},</p>\n`
+                : '';
+
+            const footerSection = state.includeFooter
+                ? `              <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; line-height: 1.5;">
+                <a href="{{ update_profile }}" style="color: #6b7280; text-decoration: underline;">Aggiorna le tue preferenze</a> ·
+                <a href="{{ unsubscribe }}" style="color: #6b7280; text-decoration: underline;">Disiscriviti</a>
+              </p>\n`
+                : '';
+
+            const html = `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #1F2D3D;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    p {
+      margin: 0 0 16px 0;
+      text-align: left;
+    }
+    a {
+      color: #1155cc;
+      text-decoration: underline;
+      word-break: break-word;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .content {
+      padding: 10px;
+    }
+    @media only screen and (max-width: 620px) {
+      .container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      .content {
+        padding: 10px !important;
+      }
+      body {
+        width: 100% !important;
+        min-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 0; padding: 0;">
+    <tr>
+      <td style="padding: 0;">
+        <table class="container" role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+          <tr>
+            <td class="content">
+${greetingLine}${italianHtml}
+${dividerSection}${englishHtml}${footerSection}            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+            // Extract links
+            const linkRegex = /<a href="([^"]+)"[^>]*>(.*?)<\/a>/g;
+            const links = [];
+            let match;
+            while ((match = linkRegex.exec(html)) !== null) {
+                const cleanText = match[2].replace(/<[^>]+>/g, '');
+                if (!match[1].includes('{{')) {
+                    links.push({ url: match[1], text: cleanText });
+                }
+            }
+
+            setState({
+                generatedHtml: html,
+                extractedLinks: links,
+                copied: false
+            });
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            navigator.clipboard.writeText(state.generatedHtml).then(() => {
+                setState({ copied: true });
+                setTimeout(() => {
+                    setState({ copied: false });
+                }, 2000);
+            }).catch(err => {
+                alert('Errore nella copia. Prova di nuovo.');
+            });
+        }
+
+        // Render UI
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+                    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                        <h1 class="text-3xl font-bold mb-2 text-gray-800">🚀 Brevo Newsletter Converter</h1>
+                        <p class="text-gray-600 mb-6">Converti il tuo testo in HTML pronto per Brevo (versione offline)</p>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Campagna (per UTM)</label>
+                                    <input
+                                        type="text"
+                                        value="${state.campaignName}"
+                                        oninput="setState({campaignName: this.value})"
+                                        placeholder="es: Bundle Novembre 2025"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Saluto iniziale (opzionale)</label>
+                                    <input
+                                        type="text"
+                                        value="${state.greeting}"
+                                        oninput="setState({greeting: this.value})"
+                                        placeholder="es: Ciao, Hi, Hey"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                    <p class="text-xs text-gray-500 mt-1">Lascia vuoto se non vuoi saluto iniziale</p>
+                                </div>
+
+                                <div class="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="includeFooter"
+                                        ${state.includeFooter ? 'checked' : ''}
+                                        onchange="setState({includeFooter: this.checked})"
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                                    />
+                                    <label for="includeFooter" class="ml-2 text-sm text-gray-700">
+                                        Includi footer con "Aggiorna preferenze" e "Disiscriviti"
+                                    </label>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Testo Italiano *</label>
+                                    <textarea
+                                        placeholder="Incolla il testo qui...
+
+**grassetto**
+[link](url)
+https://naked-url.com"
+                                        oninput="setState({italianText: this.value})"
+                                        class="w-full h-64 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    >${state.italianText}</textarea>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">URL Immagine Divisoria (opzionale)</label>
+                                    <input
+                                        type="text"
+                                        value="${state.imageUrl}"
+                                        oninput="setState({imageUrl: this.value})"
+                                        placeholder="https://... (se vuoto, linea automatica)"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                    <p class="text-xs text-gray-500 mt-1">Linea divisoria automatica se hai testo inglese</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Link su immagine (opzionale)</label>
+                                    <input
+                                        type="text"
+                                        value="${state.imageLink}"
+                                        oninput="setState({imageLink: this.value})"
+                                        placeholder="https://... (il link viene aggiunto all'immagine)"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                    <p class="text-xs text-gray-500 mt-1">Se compilato, l'immagine diventerà cliccabile con UTM automatici</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Testo Inglese (opzionale)</label>
+                                    <textarea
+                                        placeholder="English version here..."
+                                        oninput="setState({englishText: this.value})"
+                                        class="w-full h-48 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    >${state.englishText}</textarea>
+                                </div>
+
+                                <button
+                                    onclick="generateHtml()"
+                                    ${!state.italianText.trim() ? 'disabled' : ''}
+                                    class="w-full ${!state.italianText.trim() ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold py-3 px-6 rounded-md transition-colors"
+                                >
+                                    Genera HTML
+                                </button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">HTML Generato</label>
+                                    <div class="relative">
+                                        <textarea
+                                            readonly
+                                            value="${state.generatedHtml}"
+                                            placeholder="L'HTML apparirà qui..."
+                                            class="w-full h-[600px] px-3 py-2 border border-gray-300 rounded-md bg-gray-50 font-mono text-xs"
+                                        ></textarea>
+                                        ${state.generatedHtml ? `
+                                            <button
+                                                onclick="copyToClipboard()"
+                                                class="absolute top-2 right-2 ${state.copied ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} text-white text-sm font-semibold py-2 px-4 rounded-md transition-colors"
+                                            >
+                                                ${state.copied ? '✓ Copiato!' : 'Copia HTML'}
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                ${state.generatedHtml ? `
+                                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                                        <h3 class="font-semibold text-blue-900 mb-2">📋 Prossimi passi:</h3>
+                                        <ol class="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                                            <li>Clicca "Copia HTML"</li>
+                                            <li>Vai su Brevo → Editor HTML</li>
+                                            <li>Incolla e invia!</li>
+                                        </ol>
+                                    </div>
+                                ` : ''}
+
+                                ${state.extractedLinks.length > 0 ? `
+                                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                                        <h3 class="font-semibold text-green-900 mb-2">🔗 Link Checker (${state.extractedLinks.length} trovati)</h3>
+                                        <div class="space-y-2 max-h-60 overflow-y-auto">
+                                            ${state.extractedLinks.map((link, index) => `
+                                                <div class="bg-white p-2 rounded text-xs border border-green-100">
+                                                    <div class="font-semibold text-gray-700 mb-1">"${link.text}"</div>
+                                                    <div class="text-gray-600 link-item">${link.url}</div>
+                                                    ${link.url.includes('utm_') ? '<div class="text-green-600 mt-1">✓ UTM inclusi</div>' : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-3 text-gray-800">📖 Guida rapida</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                            <div>
+                                <strong class="block mb-1">Formattazione:</strong>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li><strong>**grassetto**</strong> → grassetto</li>
+                                    <li><strong>*corsivo*</strong> → corsivo</li>
+                                    <li><strong>Doppio invio</strong> → nuovo paragrafo</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="block mb-1">Link:</strong>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li><strong>[testo](url)</strong> → link con testo</li>
+                                    <li><strong>https://url</strong> → link automatico</li>
+                                    <li><strong>[**bold**](url)</strong> → funziona!</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="block mb-1">Divisore:</strong>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li><strong>Con URL</strong> → usa immagine</li>
+                                    <li><strong>Senza URL + inglese</strong> → linea automatica</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="block mb-1">Footer Brevo:</strong>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li><strong>{{ update_profile }}</strong> → preferenze</li>
+                                    <li><strong>{{ unsubscribe }}</strong> → disiscrizione</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
