@@ -272,7 +272,8 @@ class NotionClient:
 
     def update_post_status(self, page_id: str, status: str, message_id: Optional[str] = None) -> bool:
         """
-        Update post status in Notion.
+        Update post status in Notion using REST API.
+        Updates Status field to mark post as published or errored.
 
         Args:
             page_id: Notion page ID
@@ -283,9 +284,10 @@ class NotionClient:
             True if update successful, False otherwise
         """
         try:
+            # Build properties to update
             properties = {
                 "Status": {
-                    "select": {
+                    "status": {
                         "name": status
                     }
                 }
@@ -303,16 +305,44 @@ class NotionClient:
                     ]
                 }
 
-            self.client.pages.update(
-                page_id=page_id,
-                properties=properties
+            logger.debug(f"Updating page {page_id} with status='{status}'")
+
+            # Use REST API to update the page
+            update_payload = {"properties": properties}
+
+            response = requests.patch(
+                f"https://api.notion.com/v1/pages/{page_id}",
+                headers=self.headers,
+                json=update_payload,
+                timeout=10
             )
 
-            logger.info(f"Updated post {page_id} status to '{status}'")
-            return True
+            if response.status_code == 200:
+                logger.info(f"✓ Updated post {page_id} status to '{status}'")
+                return True
+            else:
+                logger.error(f"✗ Failed to update post {page_id}")
+                logger.error(f"  Status code: {response.status_code}")
+                logger.error(f"  Response: {response.text}")
 
+                # Try fallback with notion-client library
+                logger.debug(f"Trying fallback with notion-client...")
+                try:
+                    self.client.pages.update(
+                        page_id=page_id,
+                        properties=properties
+                    )
+                    logger.info(f"✓ Updated post {page_id} status to '{status}' (via fallback)")
+                    return True
+                except Exception as fallback_error:
+                    logger.error(f"✗ Fallback also failed: {fallback_error}")
+                    return False
+
+        except requests.exceptions.Timeout:
+            logger.error(f"✗ Timeout updating post {page_id} - Notion API not responding")
+            return False
         except Exception as e:
-            logger.error(f"Error updating post status for {page_id}: {e}")
+            logger.error(f"✗ Error updating post status for {page_id}: {e}", exc_info=True)
             return False
 
     def test_connection(self) -> bool:

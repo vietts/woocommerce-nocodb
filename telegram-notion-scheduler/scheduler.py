@@ -6,6 +6,8 @@ Reads scheduled posts from Notion and publishes them to Telegram.
 import os
 import logging
 import asyncio
+import atexit
+import signal
 from datetime import datetime
 from typing import Optional
 from dotenv import load_dotenv
@@ -18,6 +20,9 @@ from telegram_handler import TelegramClient
 
 # Load environment variables
 load_dotenv()
+
+# Lockfile configuration
+LOCKFILE = os.path.join(os.path.dirname(__file__), '.scheduler.lock')
 
 # Configure logging
 logging.basicConfig(
@@ -46,6 +51,52 @@ class PostScheduler:
         )
         self.type_field = os.getenv("NOTION_TYPE_FIELD", "Tipo")
         self.scheduler = AsyncIOScheduler()
+
+    def _acquire_lock(self) -> bool:
+        """
+        Acquire a lock to ensure only one scheduler instance runs.
+        Returns True if lock acquired, False if already locked.
+        """
+        import psutil
+
+        # Check if lockfile exists
+        if os.path.exists(LOCKFILE):
+            try:
+                with open(LOCKFILE, 'r') as f:
+                    pid = int(f.read().strip())
+
+                # Check if process with that PID is still running
+                if psutil.pid_exists(pid):
+                    logger.error(f"✗ Scheduler already running (PID: {pid})")
+                    logger.error(f"   Only one instance allowed!")
+                    logger.error(f"   To stop it: kill {pid}")
+                    return False
+                else:
+                    # Process died, clean up old lockfile
+                    logger.warning(f"Cleaning up stale lockfile (PID {pid} not found)")
+                    os.remove(LOCKFILE)
+            except Exception as e:
+                logger.warning(f"Error reading lockfile: {e}")
+                return False
+
+        # Create lockfile with our PID
+        try:
+            with open(LOCKFILE, 'w') as f:
+                f.write(str(os.getpid()))
+            logger.info(f"✓ Lock acquired (PID: {os.getpid()})")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create lockfile: {e}")
+            return False
+
+    def _release_lock(self):
+        """Release the lock by removing the lockfile."""
+        try:
+            if os.path.exists(LOCKFILE):
+                os.remove(LOCKFILE)
+                logger.info("✓ Lock released")
+        except Exception as e:
+            logger.warning(f"Error releasing lock: {e}")
 
     async def initialize(self) -> bool:
         """
@@ -94,22 +145,31 @@ class PostScheduler:
 
             # Process each post
             for post in posts:
+                title = post.get("title", "Unknown")
                 success = await self._process_post(post)
 
                 if success:
                     # Update status to "Pubblicato"
                     message_id = post.get("_telegram_message_id")
-                    self.notion_client.update_post_status(
+                    update_ok = self.notion_client.update_post_status(
                         page_id=post["page_id"],
                         status="Pubblicato",
                         message_id=str(message_id) if message_id else None
                     )
+                    if update_ok:
+                        logger.info(f"✓ Post '{title}' marked as published in Notion")
+                    else:
+                        logger.warning(f"⚠️  Post '{title}' published on Telegram but status update failed")
                 else:
                     # Update status to "Errore"
-                    self.notion_client.update_post_status(
+                    update_ok = self.notion_client.update_post_status(
                         page_id=post["page_id"],
                         status="Errore"
                     )
+                    if update_ok:
+                        logger.info(f"✓ Post '{title}' marked as errored in Notion")
+                    else:
+                        logger.error(f"✗ Post '{title}' failed and status update also failed")
 
         except Exception as e:
             logger.error(f"Error in check_and_publish: {e}", exc_info=True)
@@ -192,6 +252,16 @@ class PostScheduler:
 
     def start(self):
         """Start the scheduler and run jobs."""
+        # Try to acquire lock (failsafe: only one instance allowed)
+        if not self._acquire_lock():
+            logger.error("Cannot start scheduler - another instance is already running!")
+            return
+
+        # Register cleanup handlers
+        atexit.register(self._release_lock)
+        signal.signal(signal.SIGTERM, lambda sig, frame: self._handle_shutdown())
+        signal.signal(signal.SIGINT, lambda sig, frame: self._handle_shutdown())
+
         try:
             # Run initialization
             loop = asyncio.new_event_loop()
@@ -200,6 +270,7 @@ class PostScheduler:
             init_ok = loop.run_until_complete(self.initialize())
             if not init_ok:
                 logger.error("Initialization failed. Exiting.")
+                self._release_lock()
                 return
 
             # Schedule the check_and_publish job
@@ -228,7 +299,15 @@ class PostScheduler:
         finally:
             if self.scheduler.running:
                 self.scheduler.shutdown()
+            self._release_lock()
             logger.info("Scheduler stopped")
+
+    def _handle_shutdown(self):
+        """Handle graceful shutdown."""
+        logger.info("Received shutdown signal")
+        if self.scheduler.running:
+            self.scheduler.shutdown()
+        self._release_lock()
 
 
 def main():
