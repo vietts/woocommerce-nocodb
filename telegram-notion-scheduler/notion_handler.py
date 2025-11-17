@@ -42,7 +42,7 @@ class NotionClient:
     def get_scheduled_posts(self, type_field: str = "Tipo") -> List[Dict[str, Any]]:
         """
         Fetch all posts with "Programmato" status and Uscita (publication date) <= now (Rome timezone).
-        Filters on posts from -20 days to +30 days window using pagination to get all results.
+        Only fetches posts from today onwards (+30 days) to minimize data transfer.
 
         Args:
             type_field: Name of the type field in Notion (used for filtering)
@@ -54,8 +54,8 @@ class NotionClient:
             # Get current time in Rome timezone
             current_time = datetime.now(ROME_TZ)
 
-            # Calculate date range: -20 days to +30 days from now
-            date_min = (current_time - timedelta(days=20)).date()
+            # Calculate date range: today to +30 days from now
+            date_min = current_time.date()
             date_max = (current_time + timedelta(days=30)).date()
 
             logger.debug(f"Fetching posts with pagination (window: {date_min} to {date_max})")
