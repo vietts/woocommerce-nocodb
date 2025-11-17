@@ -141,12 +141,12 @@ Controlla che il campo **Messaggio** abbia contenuto su Notion.
 
 ```env
 # Telegram
-TELEGRAM_BOT_TOKEN=[REDACTED]
+TELEGRAM_BOT_TOKEN=[YOUR_BOT_TOKEN]
 TELEGRAM_CHANNEL=@probavas
 
 # Notion (nuova API 2025-09-03)
-NOTION_TOKEN=[REDACTED]
-NOTION_DATA_SOURCE_ID=24bb39b7-c6a5-4d71-aef9-fef506466d14
+NOTION_TOKEN=[YOUR_NOTION_TOKEN]
+NOTION_DATA_SOURCE_ID=[YOUR_DATA_SOURCE_ID]
 
 # Configurazione
 NOTION_TYPE_FIELD=Tipo
@@ -155,6 +155,7 @@ LOG_LEVEL=INFO
 ```
 
 ⚠️ **ATTENZIONE:** Non condividere il `.env` con nessuno!
+⚠️ **Credenziali:** I token autentici sono salvati solo nel file `.env` (escluso da .gitignore)
 
 ---
 
