@@ -293,17 +293,7 @@ class NotionClient:
                 }
             }
 
-            # Add message ID if provided
-            if message_id:
-                properties["Message ID"] = {
-                    "rich_text": [
-                        {
-                            "text": {
-                                "content": str(message_id)
-                            }
-                        }
-                    ]
-                }
+            # Note: Message ID field not required - only update Status field
 
             logger.debug(f"Updating page {page_id} with status='{status}'")
 
