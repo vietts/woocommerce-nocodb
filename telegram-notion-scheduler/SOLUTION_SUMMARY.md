@@ -72,13 +72,17 @@ The scheduler checks every 15 minutes and will publish within that window.
 2. **Check Telegram** - Look for the premiere message in @probavas
 3. **Verify in Notion** - Status will change from "Programmato" to "Pubblicato"
 
-## Performance Note
+## Performance Optimization
 
 The system now:
-- Fetches all 1,154 posts (pagination)
-- Filters to -20/+30 day window (~100-200 posts)
-- Checks Status and Type on filtered set
+- **Fetches all 1,154 posts** using pagination
+- **Filters to today → +30 days window** (future posts only)
+  - ❌ No longer fetches past posts (-20 days)
+  - ✅ Only relevant future posts
+- Checks Status="Programmato" and Type on filtered set
 - Runs every 15 minutes
+
+**Result**: Significantly reduced processing on each check cycle while maintaining full coverage of upcoming posts.
 
 This is efficient and sustainable for production use.
 
